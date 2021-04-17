@@ -1,33 +1,55 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2021 Chenming C
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import java.io.*;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+/**
+ * This class is used to implement the distinct function.
+ */
 public class Hw1Grp4 {
 
+  /**
+   * This method is the entrance of this program.
+   * @param args R=file-name select:R1,gt,5.1 distinct:R2,R3,R5
+   */
   public static void main(String[] args) {
     if (args.length < 3) {
       System.out.println("java HW1 R=<file> select:R<1>,<gt>,<5.1> distinct:<R2,R3,R5>");
@@ -42,7 +64,7 @@ public class Hw1Grp4 {
     // get compare expression from args
     String[] compareExp = args[1].substring(7).split(",");
     int compareIndex = Integer.parseInt(compareExp[0].substring(1));
-    String compareType = compareExp[1];
+    String compareType = compareExp[1]; // compare operator
     double compareValue = Double.parseDouble(compareExp[2]);
 
     // get distinct columns from args
@@ -50,9 +72,7 @@ public class Hw1Grp4 {
     int[] distinctIndex = new int[distinct.length];
     for (int i = 0; i < distinct.length; i++) {
       distinctIndex[i] = Integer.parseInt(distinct[i].substring(1));
-      System.out.print(distinct[i]);
     }
-    System.out.println();
 
     // read from hdfs
     HashMap<String, String[]> tableData = new HashMap<>();
@@ -64,18 +84,16 @@ public class Hw1Grp4 {
       while ((s = in.readLine()) != null) {
         String[] cols = s.split("\\|");
         String[] result = new String[distinctIndex.length];
+        // check the row has meet the condition or not
         if (compare(compareType, compareValue, Double.parseDouble(cols[compareIndex]))) {
           for (int i = 0; i < distinctIndex.length; i++) {
             result[i] = cols[distinctIndex[i]];
           }
+          // put into the hash map
           tableData.put(String.join(",", result), result);
         }
       }
 
-      // output results
-      for (String res : tableData.keySet()) {
-        System.out.println(res);
-      }
     } catch (IOException exception) {
       System.out.println("open file error: " + exception.getMessage());
       System.exit(-1);
@@ -119,7 +137,14 @@ public class Hw1Grp4 {
     }
   }
 
-  private static boolean compare(String compareType, double compareValue, double value) {
+  /**
+   * This method is used to check whether the row meets the comparison condition.
+   * @param compareType  The compare operator
+   * @param compareValue The condition of the comparison
+   * @param value        The value of the row
+   * @return The row has meet the comparison condition or not
+   */
+  static boolean compare(String compareType, double compareValue, double value) {
     switch (compareType) {
       case "gt":
         return value > compareValue;
