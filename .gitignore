@@ -93,3 +93,7 @@ fabric.properties
 *.iml
 out
 gen
+/doc/
+/hw1-check/
+/hw2-check/
+/index-files/
